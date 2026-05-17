@@ -6,6 +6,7 @@
 
 - **externalization-ceiling-2026-04-30** — Harness 层投资的结构性贬值：论证所有不修改模型权重的 AI 工程改进本质都是 externalization，其天花板来自模型底层表征几何结构，变薄是收敛方向
 - **discard-capability-2026-05-11** — 丢弃函数：信息筛选作为智能系统的统一上限，从离线/在线统一原理到跨层级联丢弃的未解问题
+- **deepseek-harness-pm-2026-05-17** — DeepSeek 做 Harness：从外化天花板出发，论证上游做 harness 的结构性差异与 cache 跨层一致性的竞争壁垒
 
 ## notes
 
@@ -14,23 +15,33 @@
 - 三省六部的根本錯誤
 - AI 工具的雙重約束：ceiling 與 attractor
 - Alignment 是自指的困境
+- Alignment 瓶頸的轉移
 - 擬人性可能是語言能力的構成條件而非附加物
 - 上下文腐爛的實證量化
 - 評價標準即攻擊面
+- 對 AI 行業注水層級的清醒認知
 - 蒸餾作為信息洩漏通道
 - 蒸餾真正省的不是訓練成本是推理鏈構建
 - 工程分工與擬人分工的判別線
 - 框架選擇本身是噪聲
+- 冷板凳方向的成立條件
 - 哥布林禁令是 externalization 補丁的退化樣本
 - LLM 作為 AGI 預示不在語言湧現可複製，在 coding 的元工具能力
+- LLM參數層的知識論異態
 - 本地模型的校準信任危機
+- 草台班子的混沌護城河
+- Codex與Claude Code的分工本質
 - Managed Agents 的操作系統類比
 - 多 agent 的真正價值是並行覆蓋不是分工
 - 賽博花柳病
+- 智力提升製造陪伴期待的錯位
+- 副產品不被保護
 - Prompt engineering 的信噪比問題
 - 「去抑制版」洩露了 safety 的結構性位置
 - SFT 記憶模板，RL 學到泛化
 - 垂直領域的LLM equivalent需要自己的數據飛輪
+- 自然湧現 vs 組裝供應鏈
+- DeepSeek 作為真正範式探索的案例
 
 ### power
 
