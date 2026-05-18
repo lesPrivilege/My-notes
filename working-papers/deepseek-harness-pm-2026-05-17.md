@@ -1,8 +1,6 @@
 # DeepSeek 做 Harness：一个结构性论证
 
 > Working Paper · Draft · 2026-05-17
-> 求职附件：DeepSeek Agent Harness 产品经理岗位
-> 读者：DeepSeek 研究员与核心工程师
 
 ---
 
@@ -110,7 +108,7 @@ DeepSeek 在这个统一原理上，有几个层的实施深度是别的地方�
 
 这件事第三方做不了。第三方不控制推理引擎，也不定义 API 的 cache 行为。它最多在框架层做 prompt engineering 来补偿 cache miss——本质上是用补丁补偿另一层补丁。
 
-如果 DeepSeek 在 harness 产品里，把 cache hit 从「尽力而为的优化」变成「模型 API、推理引擎、harness 框架三方的共享契约」，agent 产品的单位经济学就有了一个对手没法追的护城河。不是 prompt 写得好，是 cache 保证来自对三层基础设施的垂直整合。
+把 cache hit 从「尽力而为的优化」变成「模型 API、推理引擎、harness 框架三方的共享契约」，agent 产品的单位经济学就有了一个竞争对手难以复制的结构性优势。不是 prompt 写得好，是 cache 保证来自对三层基础设施的垂直整合。第三方 harness 公司做不到这一点——它最多在框架层做 prompt engineering 补偿 cache miss，本质上是用补丁补偿另一层补丁。
 
 ---
 
