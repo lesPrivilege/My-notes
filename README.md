@@ -187,6 +187,12 @@
 - 淺嘗輒止的階段合理性
 - 個人 harness engineering 的設計目標是被 internalize 掉
 
+## 索引文件
+
+- `tech.md` — AI 工程 / harness 设计 / 模型架构相关笔记索引
+- `power.md` — 行业结构 / 资本逻辑 / 组织行为相关笔记索引
+- `mind.md` — 认知 / 方法论 / 思维模型相关笔记索引（含 life）
+
 ## reading-notes
 
-reading-companion skill 输出存档，67 篇论文/repo 结构化阅读笔记。
+67 篇论文与 repo 的结构化阅读笔记。
