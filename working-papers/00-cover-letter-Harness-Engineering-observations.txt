@@ -1,0 +1,70 @@
+DeepSeek Harness 团队
+
+# Harness Engineering 观察与延伸思考
+
+Model + Harness = Agent。这个等式把 harness 从辅助工具提升到了和模型对等的位置。但等式两侧的权重是动态的——模型每进步一步，harness 中作为缺陷补丁的部分折旧一层，作为诊断系统和运行时基础设施的部分反而增值。谁在做 harness，决定了折旧的去向。
+
+附件四篇文章构成一个证据链，可按优先级跳读：第一篇对 Claude Code harness 架构做源码级复盘（参照 Harness Engineering Book 1）——Query Loop 心跳、Context Governance 分层、Multi-Agent cache safety；第二篇复盘 Mnemos 的架构决策——一个应用层不调 LLM API、只消费结构化输出的学习工具，三层模块事后回看与 Prompt/Harness/Context 对应，但这个对应是独立到达的，不是套框架的结果；第三篇讨论 harness 投资折旧与上游做 harness 的结构性优势；第四篇是 DeepSeek 生态中 DeepSeek-TUI、Reasonix、ds4 三个开源项目的调研笔记。若时间有限，建议优先读第一篇和 Mnemos 复盘；后二者主要体现行业观察、产品品味与开源生态理解。
+
+这里不重复论证，只讲几个贯穿性的判断。
+
+## Query Loop 的本质
+
+Harness PM 真正在管理的指标不是系统正确性，是业务连续性——让 agent 能进行长时间、高强度、连续的工作会话。Claude Code 的 queryLoop（src/query.ts:241）在每次推理前做的最重要的事不是发起调用，是修剪 context：memory prefetch、skill discovery、tool result budget、history snip、microcompact、context collapse、autocompact——全部裁切完才向模型发起请求。Context compression 不是摘要，是工作语义的重建：压缩后模型必须能接上被中断的思路继续工作。
+
+这个设计原则可以推广：harness 的核心职能不是让模型更强，是让模型在连续工作中不散架。
+
+## Cache 是跨层主线
+
+Cache hit 不是框架层的局部优化。从模型架构（over-training 把高频 pattern 烧进权重、MoE 稀疏激活）到推理引擎（KV cache checkpoint、exact 前缀跨 session 复用）到框架设计（三段式 context 分区、cache-first loop），做的是同一件事：把重复计算前置，运行时只处理增量。Memory bandwidth 是硬瓶颈，所有层的优化方向被它统一了。
+
+这种跨层一致性只有同时控制模型、推理基础设施和 harness 的玩家才能做到。Reasonix 用逆向工程把 cache hit 推到 99.82%——是社区在外部观察下的最优解。但模型提供方可以让 tool calling 行为本身就与 harness schema 对齐，不需要 4-pass repair pipeline。官方下场不是挤压社区，是重新定义参照系。
+
+## 产品层：Codex 合并与两条路径
+
+最近有一个值得注意的动向。据 Bloomberg 2026-03-20 报道，OpenAI 正在规划整合 ChatGPT、Codex 与 Atlas 浏览器的桌面应用；OpenAI 2026-05-14 release notes 显示，Codex 已在 ChatGPT mobile app 中 preview，用户可以在移动端启动任务、审查输出、批准下一步行动。无论最终整合形态如何，产品层面的方向已经很清楚：coding agent 正在从开发者工具，向更连续、更跨设备、更接近通用工作入口的形态移动。
+
+但这不是简单的 UI 合并。ChatGPT 式对话产品和 coding agent 在 context 模型、权限体系、工具执行、任务恢复上的运行时假设并不相同；真正困难的是 harness 基础设施能不能承载两类产品形态的重新对接。
+
+两条路径的对比浮现出来了。Claude Code 选 TUI 是早期面向 API 用户的历史路径依赖——它的用户群最初就是开发者，TUI 是自然选择。OpenAI 把 Codex 接入 ChatGPT 移动端，则是在利用消费级入口扩大 coding agent 的触达面。两条路径的取舍不同：TUI 的信息密度和键盘效率无可替代，移动端的触达面和使用频次无可替代。后发者不被这两条路径绑住——桌面端客户端不是 TUI 的视觉升级，是产品范式的转换。
+
+从产品品类角度看，coding agent 是目前消费级 LLM 应用里唯一可能既有市场规模又有商业可持续性的——开发者决策链短、付费意愿强、对工具品质敏感。Cache hit 让单位经济模型从持续烧钱转向可能盈利。但 coding agent 的 harness 设计是模式参照，不是通用基座——学习 agent 的间隔重复调度、科研 agent 的文献关联、写作 agent 的草稿管理，需要垂直领域单独设计。NotebookLM 验证了 context engineering 作为产品主轴在学习场景的市场需求，但中文学习和科研场景目前缺一个 harness 哲学一致、context engineering 严肃设计的产品。
+
+## Tool Authorization 的脆弱性
+
+Tool authorization 的 allow/deny/ask 三值授权有一个设计假设的失效。设计意图是让用户每次做有意义的判断，实际行为是用户连续按 yes 进入授权疲劳。这不是用户的错——当认知负载超过阈值时，「同意」不构成实质同意。EULA 在多个司法管辖区的有效性争议本质上是同一个问题：知情同意在认知超载时不成立。
+
+DeepSeek TUI 的 OS-level sandbox 走了另一条路：把保护从授权机制转移到沙箱机制。这类判断需要同时具备工程实操感和制度设计直觉，不是纯工程视角能覆盖的。
+
+## 工作形态的同构
+
+过去四年在大型集团化企业做法务系统 PM，主要是两个系统的产品设计、跨系统集成与全国推广。实际工作里大部分时间不在「产品」上——是开不完的对齐会、解释为什么这个字段不能改、追着各区域催数据、处理合资方的特殊要求、给老业务流程兜底、在没有完整需求文档的情况下推进集成。
+
+产品本身也不是干净的范式。合同系统的双路径方案是因为电子签约推不动而保留线下兜底；证照系统的三级治理网络是几轮推广失败后才形成的；接口契约里有相当一部分字段是历史包袱的妥协产物。指标确实压降了核心场景缺失率，但也有些板块至今没真正跑通。
+
+但这套工作里能沉淀下来的判断是真的：
+
+- 异质用户群的真实需求要从矛盾反馈里反推，不能信任表面陈述；
+- 跨系统集成的难点不在技术，在边界谁负责、出问题谁背锅；
+- 指标体系最重要的不是定义，是确保数据可信、看板有人看、滞后区域真的会被干预；
+- 用户反馈要先分类再统计：哪些是产品缺陷，哪些是制度口径，哪些是数据质量，哪些只是组织执行噪声；
+- 产品上线只是工作的 10\%，剩下 90\% 是推广运维和打补丁。
+
+这些不是抽象判断。证照系统的全国推广用大区分层访谈、问题台账与报表异常追踪，以覆盖率、缺失风险、闭环率、滞后清单等分层指标衡量，再把反馈拆成产品缺陷、制度口径、数据质量、组织执行四类信号分别处理；合同系统的电子签约/线下签章双路径是按大区灰度试点跑出来的妥协方案。
+
+这些判断和 harness PM 的工作形态高度相似——开发者社群、模型行为、产品节奏构成的另一组异质性，大部分时间也不是在「做产品」，是在处理噪声、补丁、妥协。换个领域，问题结构一样。
+
+## 实践基础
+
+这些判断不只来自阅读。我维护一组 Claude Code skill（科研伴读、归档、内容产出、ebook 清洗、论文检索），构成一套非 coding 场景的 harness 实践体系。日常工具链按认知频宽分层：Claude 做判断，Flash 做执行。Mnemos 的架构决策——应用层不调用 LLM API，只消费外部工具输出的结构化 markdown/JSON——是在有限的开发时间内被工程务实性推到那个位置的，事后发现这个边界恰好让应用层获得了对模型变化的抗折旧能力。
+
+工具链上日常深度使用 Claude Code、Codex、OpenCode；阶段性体验过 Cursor、Cowork、Manus、OpenClaw、Hermes 等不同 harness 路径，对各家在 context 治理、tool use 编排、权限模型上的取舍有自己的判断。
+
+## 为什么是现在
+
+不是追 LLM 热潮。Coding 作为通用能力，能让有 domain knowledge 的人自主推动其领域的数据闭环。LLM 的飞轮目前只在语言和代码两个域真正成立，其他垂直领域还没有——但 coding 基础设施是通往那些领域的前提。
+
+当前 Agent/Harness 产品的瓶颈不只在模型能力，也在能理解具体领域真实工作流、持续判断模型能力边界，并把这种判断翻译成可运行、可观测、可迭代产品系统的人。LLM 同时解除了另一个约束：以前必须在学术共同体或机构内才能获得反馈和推进的工作，现在可以独立开展。把这套判断对应到当前格局：最有意义的位置，是模型方自己做 harness。
+
+孙广昊
+2026 年 5 月
