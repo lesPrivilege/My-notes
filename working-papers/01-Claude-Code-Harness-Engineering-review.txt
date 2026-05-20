@@ -1,0 +1,109 @@
+# Claude Code Harness 源码复盘
+
+- **日期**：2026-05-18
+- **参照**：agentway.dev Harness Engineering Book 1
+
+---
+
+## 一、Why Harness：滚雪球与修剪
+
+API 调用层面，agent 的交互方式实际上是在滚雪球。服务器那边只认识这次发过来的 messages，像一条只有 7 秒记忆的鱼，不知道上一轮聊了什么。简化来说：第一轮请求是 system prompt + 用户发言 1；第二轮是上面的内容 + AI 回复 1 + 用户发言 2；第三轮再叠加 tool call、tool result、用户发言 3。
+
+两个后果。第一，每次请求都要重新计算前面的 token，重复内容被消费很多次。第二，session 越长，首字延迟越高，模型的注意力会漂移。
+
+为了对冲这两件事，frontier 服务商在推理层引入了跨请求的 KV cache：上一次请求处理完，cache 不再清空；下一条 message 发过来时，如果服务器发现前面一大段内容与刚处理过的请求一模一样，就直接调出已经算好的 KV cache，只计算新加进来的对话部分。这是把滚雪球的成本从"每轮重算"变成"只算增量"。
+
+但 cache 命中有一个硬约束：**前缀必须精确匹配**。一个字节不同，cache 就破掉，整条前缀重新计算。这个约束往回传导到 harness 层，决定了 harness 真正的工作是什么——不是把所有上下文交给模型，而是**修剪 + 稳定前缀**。修剪掉对当下任务无用的部分，稳定住可以跨轮复用的部分。`queryLoop()`（src/query.ts:241）在进入模型阶段之前做的所有事，本质都是这一件事的两面。
+
+Claude Code 的 prompt 组装中有若干动态内容（社区讨论中常见的现象之一），所以接入第三方 API 时曾出现 cache hit 不佳的情况——这个事实也反过来说明了为什么 cache-first loop（如 Reasonix 的三区 context 分割）有它的价值：cache 不是被动收益，是要主动设计才能拿到的资产。
+
+## 二、Prompt 是 Control Plane
+
+LLM 早期主要依赖 prompt engineering——用什么样的提示词达到什么样的效果，让回答更精准、结果可基本复现。最初的 agent 或 skill 实际上就是一段 prompt，由 LLM 扮演角色。
+
+但 Claude Code 的 prompt 不是一段连贯的长字符串，而是一条组装线，按职责动态拼装。`getSystemPrompt()`（src/constants/prompts.ts:444）按区块返回：基础身份、系统规则、工程约束。冲突时有 `buildEffectiveSystemPrompt()`（src/utils/systemPrompt.ts:28）的明确优先级原则（override > coordinator > agent > custom > default）。
+
+更关键的是，提示词本身也是 cache 资产，所以要明确区分哪些是稳定段（cacheable `systemPromptSection`）、哪些会破坏 cache（`DANGEROUS_uncachedSystemPromptSection`），见 src/constants/systemPromptSections.ts:16。把 "什么放进去" 和 "放进去会不会破 cache" 这两个问题分开处理，是 Claude Code 把 prompt 当 control plane 而不是当台词的具体体现。
+
+这一层往下延伸到 memory 管理：CLAUDE.md、MEMORY.md 都是 MD 文件，但 prompt 更宏观，主要是约束和规则，memory 是工作语义的载体。下面第四章再展开。
+
+## 三、Query Loop：心跳与输入治理
+
+Agent 不是一次次孤立的 API call，是一个状态机。`query()`（src/query.ts:219）是外壳，`queryLoop()`（src/query.ts:241）是核心。它维护一个跨轮次的 state 对象（src/query.ts:203-217），包含 messages、toolUseContext、autoCompactTracking、maxOutputTokensRecoveryCount、turnCount、transition 等。
+
+queryLoop 在进入模型阶段之前执行的预处理（src/query.ts:297-453）——记忆预取、skill 发现、消息切片、tool result 预算、history snip、microcompact、context collapse、autocompact——一切裁切好之后才向模型发起请求。**输入治理在前，推理在后。**
+
+模型的输出只是循环中的一个阶段（src/query.ts:652 起）。输出是以 for await streaming 消费的事件流，包含 assistant text、tool_use blocks、usage updates、stop reasons、API errors。架构因此从 request-response 变成了 drive-schedule-feedback。这一点对理解 agent 设计是分水岭：**模型输出在循环里不是结果，是事件**。所以 query loop 的设计决定了所有其他子系统（context budget、tool scheduling、error recovery）的位置。
+
+### 工具调用与权限
+
+工具调用带来更高风险：chatbot 出错只产生错误文字；工具出错会改文件。`useCanUseTool()`（src/hooks/useCanUseTool.tsx:27）把授权分为 allow / deny / ask 三个语义分支（`PermissionResult.ts:23`）。执行能力和执行授权被刻意分离。
+
+这里有一个设计意图和实际行为之间的落差现象：设计假设是用户每次 ask 都做有意义的判断；但用户在 agent 工作流里大部分脑力是外包出去的，连续按 yes 的频率会很高。allow/deny/ask 在工程上很干净，但在认知负担超载的场景下，"ask" 实际上经常退化成"自动 allow"。这不构成对设计的否定——这套三值授权仍然是工具治理的基础——但它说明，**授权机制在 agent 场景里和它在传统 IDE 里承担的功能是不一样的**，需要被理解为概率工具而非确定性工具。
+
+工具执行还强调排程纪律。`runTools()`（src/services/tools/toolOrchestration.ts:19）按 concurrency safety 分批：安全的批次执行，不安全的串行执行。context modifier 回调按原始 block 顺序重放（:31-:63），语义因果链保持确定性。Bash 需要最高密度的约束。src/tools/BashTool/prompt.ts:42 以下有详细的 git、PR、hook、force push 规则。bashPermissions.ts 处理 shell 语义、命令前缀、subcommand cap（:95 起的复合指令上限）。
+
+### 错误处理
+
+无论因为什么原因中断（context 超载、token 耗尽、用户主动停止等），系统都强制进行一次归口，不当例外处理，而当成下一次循环能否继续工作的主干结构。
+
+- **Prompt too long**：先 flush staged collapse（src/query.ts:1086-1116），不够才进入 reactive compact（:1119-1166），从低破坏性往高破坏性
+- **max_output_tokens**：先提高 cap，不够再加一条 meta user message 直接续写不 recap（src/query.ts:1185 起）
+- **Circuit breaker**：autocompact 连续失败 3 次（`MAX_CONSECUTIVE_AUTOCOMPACT_FAILURES = 3`）后跳过，src/services/compact/autoCompact.ts
+
+错误是主路径——这句话的工程意思是：错误处理代码不在边角，是 query loop 主循环的一部分。
+
+### PM 视角：错误是能力边界的观测窗口
+
+对 Harness PM 来说，错误不是 bug list，而是模型能力边界的观测窗口。一次 tool use 失败，要区分是权限设计问题、任务规格问题、context 治理问题，还是模型本身能力不足。只有这种分类稳定下来，失败日志才可能从运营成本变成产品迭代和模型训练的信号。
+
+## 四、Context & Memory Governance
+
+### 持久层：记忆是指标而非日记
+
+MEMORY.md 被设计成索引而非日记：写入专属文件，在 MEMORY.md 中加入一行指针。memdir/memdir.ts 设硬限制：`MAX_ENTRYPOINT_LINES = 200`，`MAX_ENTRYPOINT_BYTES = 25,000`。超限触发 truncation 并附加明确警告——只有部分加载，细节移入主题文件。
+
+为什么要硬上限？因为长期 memory 如果记成日记，会污染 attention、稀释 signal、增加每次调用的 cache miss 风险。memory 的目的不是记录过去，是约束当下。一份 200 行的边界声明比一份 2000 行的工作日志对模型更有用。
+
+### Recovery 层：Context 是为下一次做好准备
+
+Claude Code 对上下文的设计主旨不是把前面所有的记忆都兜住，是**为下一次能否正常工作考虑**。`SessionMemory`（src/services/SessionMemory/prompts.ts）有固定模板（Current State / Task specification / Files and Functions / Workflow / Errors & Corrections / Learnings / Key results / Worklog），`MAX_SECTION_LENGTH = 2000`，`MAX_TOTAL_SESSION_MEMORY_TOKENS = 12000`。
+
+Autocompact（src/services/compact/autoCompact.ts）预留 `MAX_OUTPUT_TOKENS_FOR_SUMMARY = 20,000`（compact 输出空间）和 `AUTOCOMPACT_BUFFER_TOKENS = 13,000`（提前预警缓冲）。**context governance 必须预留失败与恢复的空间**——这一部分预算不是给推理的，是给故障的。系统在这里不是省 token，是为故障买保险。
+
+`compactConversation()`（src/services/compact/compact.ts）做的不是传统意义上的总结，而是一次**工作语义的重建**。压缩后，模型能够接上刚才被中断的思路继续工作——它恢复的不只是对话摘要，还包括 file attachments、plan state、skill attachments、hooks state。
+
+## 五、收束：连续性优先于完整性
+
+把前面四章串起来看，Claude Code 的所有设计判断都指向一个产品事实：**agent 的价值不来自单次回答的完整性，来自能否长时间、跨故障、连续工作**。
+
+这件事在很多设计里被混为一谈。"记得多"和"能继续"听起来像同一件事，实际上是相反方向的取舍。记得多意味着把历史信息尽量往 context 里塞，结果是 token 预算被历史占满，故障一来就没有恢复余地；能继续意味着主动放弃一部分历史信息，把预算留给 working memory 的重建。Claude Code 选了后者——MEMORY.md 的硬上限、SessionMemory 的固定模板、autocompact 的故障预算，都是同一个取舍的不同侧面。
+
+这条判断也回头解释了第一章的修剪。修剪不是为了省钱（虽然顺带省钱），是为了让 agent 在一次又一次的边界条件触发后，仍然能从下一轮开始正常工作。harness engineering 的真问题不是"如何让模型表现更好"，是"如何让一个本质上不可靠的组件在长时间运行中仍然提供可工程化的连续性"。这就是 Book 1 第九章那十条原则要回答的同一个问题，只不过它从十个不同切面在切。
+
+---
+
+## 关键 Source Files 速查（Book 1 Source Map）
+
+| 主题 | 文件 |
+|------|------|
+| Prompt 组装 | src/constants/prompts.ts |
+| Prompt 优先级 | src/utils/systemPrompt.ts |
+| CLAUDE.md 加载 | src/utils/claudemd.ts |
+| MEMORY.md | src/memdir/memdir.ts |
+| SystemPromptSection cache | src/constants/systemPromptSections.ts |
+| Query Loop | src/query.ts |
+| QueryEngine | src/QueryEngine.ts |
+| Tool Orchestration | src/services/tools/toolOrchestration.ts |
+| Tool Execution | src/services/tools/toolExecution.ts |
+| 权限判断 | src/hooks/useCanUseTool.tsx |
+| Permission 语义 | src/utils/permissions/PermissionResult.ts |
+| Bash prompt | src/tools/BashTool/prompt.ts |
+| Bash 权限 | src/tools/BashTool/bashPermissions.ts |
+| Autocompact | src/services/compact/autoCompact.ts |
+| Compact | src/services/compact/compact.ts |
+| SessionMemory | src/services/SessionMemory/prompts.ts |
+
+---
+
+*附：本文聚焦 Claude Code 单一系统的 harness 架构分析。关于 DeepSeek-TUI / Reasonix / ds4 三个 DeepSeek 生态开源项目的源码审计与产品观察，另见附件四《DeepSeek-first Harness Engineering：三个开源项目的源码审计笔记》。*
