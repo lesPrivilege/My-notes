@@ -6,29 +6,23 @@
 
 ```
 my-notes/
-├── CURATION.md           ← 精選原子筆記索引
 ├── archive/              ← 原子筆記（按分類歸檔）
-│   ├── tech.md           ← 技術與系統（179 entries）
-│   ├── mind.md           ← 認知、哲學與心智（91 entries）
-│   ├── life.md           ← 生活、決策與心智工具（35 entries）
-│   ├── power.md          ← 組織、資本與權力（65 entries）
-│   └── method.md         ← 數學、學習與方法論（38 entries）
 ├── reading-notes/        ← arxiv 論文與 repo 的閱讀筆記（67 篇）
-├── working-papers/
-│   ├── composed/          ← 合成論文（論證鏈完整，4 篇）
-│   ├── deliverables/      ← 交付物（源碼審計、事實報告，8 篇）
-│   └── usage-index.md     ← 消費追蹤
+└── working-papers/
+    ├── composed/          ← 合成論文（論證鏈完整，4 篇）
+    ├── deliverables/      ← 交付物（源碼審計、事實報告，8 篇）
+    └── usage-index.md     ← 消費追蹤
 ```
 
-## 更新
+## archive
 
-由 `~/Scripts/sync-my-notes.sh` 增量同步：
-
-- **archive/** — 從 Obsidian 歸檔同步，全量推送
-- **CURATION.md** — 精選清單，手動維護後推送
-- **reading-notes/** — 直接在本 repo 新增，全量推送
-- **working-papers/composed/** — 從 Obsidian 歸檔同步，增量推送
-- **working-papers/deliverables/** — 從 delivery 項目拷貝，手動推
+| 分類 | 條數 | 文件 |
+|------|------|------|
+| 技術與系統 | 179 | [`archive/tech.md`](archive/tech.md) |
+| 認知、哲學與心智 | 91 | [`archive/mind.md`](archive/mind.md) |
+| 組織、資本與權力 | 65 | [`archive/power.md`](archive/power.md) |
+| 數學、學習與方法論 | 38 | [`archive/method.md`](archive/method.md) |
+| 生活、決策與心智工具 | 35 | [`archive/life.md`](archive/life.md) |
 
 ## working-papers
 
@@ -49,3 +43,12 @@ my-notes/
 - [audit-deepseek-tui](working-papers/deliverables/audit-deepseek-tui.md) — DeepSeek-TUI 源碼審計 (v0.8.39)
 - [audit-ds4](working-papers/deliverables/audit-ds4.md) — ds4 源碼審計
 - [audit-reasonix](working-papers/deliverables/audit-reasonix.md) — Reasonix 源碼審計
+
+## 更新
+
+由 `~/Scripts/sync-my-notes.sh` 增量同步：
+
+- **archive/** — 從 Obsidian 歸檔同步，全量推送
+- **reading-notes/** — 直接在本 repo 新增，全量推送
+- **working-papers/composed/** — 從 Obsidian 歸檔同步，增量推送
+- **working-papers/deliverables/** — 從 delivery 項目拷貝，手動推
