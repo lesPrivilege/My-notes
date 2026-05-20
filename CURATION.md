@@ -16,6 +16,7 @@
 ---
 
 ## tech（73 entries）
+> [`archive/tech.md`](../Documents/Obsidian/archive/tech.md)
 
 - AI 工具的雙重約束：ceiling 與 attractor
 - Agent 框架的暴力消耗本質
@@ -95,6 +96,7 @@
 - 關鍵競爭指標是編譯效率而非 benchmark 通用能力
 
 ## power（8 entries）
+> [`archive/power.md`](../Documents/Obsidian/archive/power.md)
 
 - 大廠的 LLM 困局是結構性的，不是資源性的
 - 收購買到的是快照，不是能力的源頭
@@ -105,7 +107,9 @@
 - 自然湧現 vs 組裝供應鏈
 - 對 AI 行業注水層級的清醒認知
 
-## mind（104 entries）
+## mind（85 entries）
+> [`archive/mind.md`](../Documents/Obsidian/archive/mind.md)
+> [`archive/mind.md`](../Documents/Obsidian/archive/mind.md)
 
 - 「從心所欲不逾矩」的前提是沉默權
 - 日常語言的簡單化是一種篩選機制
@@ -202,6 +206,7 @@
 - 智能進步的元效應
 
 ## method（5 entries）
+> [`archive/method.md`](../Documents/Obsidian/archive/method.md)
 
 - 演繹系統 vs 經驗庫
 - 顯性知識零成本化後的選拔體系失效
@@ -210,6 +215,7 @@
 - recall/reference 分離是 SRS 的結構性改進
 
 ## life（25 entries）
+> [`archive/life.md`](../Documents/Obsidian/archive/life.md)
 
 - 系統在狀態好時替狀態差的自己做決策
 - 機器學習作為人的仿生武術
