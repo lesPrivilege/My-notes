@@ -8,6 +8,7 @@
 my-notes/
 ├── archive/              ← 原子筆記（按分類歸檔）
 ├── reading-notes/        ← arxiv 論文與 repo 的閱讀筆記（67 篇）
+├── source-audit/         ← CLI 執行路徑追蹤審計（4 篇）
 └── working-papers/
     ├── composed/          ← 合成論文（論證鏈完整，4 篇）
     ├── deliverables/      ← 交付物（源碼審計、事實報告，8 篇）
@@ -23,6 +24,15 @@ my-notes/
 | 組織、資本與權力 | 65 | [`archive/power.md`](archive/power.md) |
 | 數學、學習與方法論 | 38 | [`archive/method.md`](archive/method.md) |
 | 生活、決策與心智工具 | 35 | [`archive/life.md`](archive/life.md) |
+
+## source-audit
+
+| 報告 | 專案 | 規模 | 類型 |
+|------|------|------|------|
+| [`reasonix`](source-audit/2026-05-21_reasonix-execution-path.md) | Reasonix — TypeScript coding agent | 294 files | 執行路徑追蹤 |
+| [`ds4`](source-audit/2026-05-21_ds4-execution-path.md) | DwarfStar 4 — C inference engine | 15,581 lines | 執行路徑追蹤 |
+| [`deepseek-tui`](source-audit/2026-05-21_deepseek-tui-execution-path.md) | DeepSeek-TUI — Rust coding agent | 14 crates | 執行路徑追蹤 |
+| [`pi`](source-audit/2026-05-21_Pi-deep-review.md) | Pi — TypeScript agent harness | 598 files, 4 packages | 深層架構審計 |
 
 ## working-papers
 
