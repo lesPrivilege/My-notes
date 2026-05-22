@@ -13,7 +13,7 @@
 
 ### Source Audits（源碼審計）
 
-五份跨專案執行路徑追蹤與根因分析報告（DeepSeek-TUI / Reasonix / ds4 / Pi）。
+九份跨專案源碼審計與執行路徑追蹤報告（DeepSeek-TUI / Reasonix / ds4 / Pi / Bub / Hermes / OpenClaw）。
 
 ### Archive
 
@@ -42,6 +42,14 @@
 | [`deepseek-tui`](source-audit/2026-05-21_deepseek-tui-execution-path.md) | DeepSeek-TUI — Rust coding agent | 14 crates | 執行路徑追蹤 |
 | [`deepseek-tui-root-cause`](source-audit/2026-05-22_deepseek-tui-root-cause-analysis.md) | DeepSeek-TUI 口碑根因 | 209K lines | 源碼根因分析 |
 | [`pi`](source-audit/2026-05-21_Pi-deep-review.md) | Pi — TypeScript agent harness | 598 files, 4 packages | 深層架構審計 |
+| [`bub`](source-audit/2026-05-22_bub-execution-path.md) | Bub — Python agent runtime | ~3,300 lines | 執行路徑追蹤 |
+| [`hermes`](source-audit/2026-05-21_Hermes-Agent-Source-Audit.md) | Hermes Agent — Python agent | v0.14.0 | 源碼審計 |
+| [`openclaw`](source-audit/2026-05-21_OpenClaw-Source-Audit.md) | OpenClaw — TS agent platform | 18,019 files | 源碼審計 |
+| [`cross-project`](source-audit/2026-05-21_cross-project-architecture-comparison.md) | TUI + Reasonix + Pi + ds4 | 4 repos | 架構比較 |
+| [`reasonix-claim`](source-audit/2026-05-18_Reasonix-Audit.md) | Reasonix — TypeScript | v0.43.0 | 聲稱驗證 |
+| [`ds4-claim`](source-audit/2026-05-18_DS4-Audit.md) | DwarfStar 4 — C | alpha | 聲稱驗證 |
+| [`deepseek-tui-claim`](source-audit/2026-05-18_DeepSeek-TUI-Audit.md) | DeepSeek-TUI — Rust | v0.8.39 | 聲稱驗證 |
+| [`cli-prompts`](source-audit/cli-review-prompts.md) | Audit prompt templates | 4 prompts | 技術文件 |
 
 ## working-papers
 
