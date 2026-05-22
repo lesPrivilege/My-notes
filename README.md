@@ -32,6 +32,7 @@ my-notes/
 | [`reasonix`](source-audit/2026-05-21_reasonix-execution-path.md) | Reasonix — TypeScript coding agent | 294 files | 執行路徑追蹤 |
 | [`ds4`](source-audit/2026-05-21_ds4-execution-path.md) | DwarfStar 4 — C inference engine | 15,581 lines | 執行路徑追蹤 |
 | [`deepseek-tui`](source-audit/2026-05-21_deepseek-tui-execution-path.md) | DeepSeek-TUI — Rust coding agent | 14 crates | 執行路徑追蹤 |
+| [`deepseek-tui-root-cause`](source-audit/2026-05-22_deepseek-tui-root-cause-analysis.md) | DeepSeek-TUI 口碑根因 | 209K lines | 源碼根因分析 |
 | [`pi`](source-audit/2026-05-21_Pi-deep-review.md) | Pi — TypeScript agent harness | 598 files, 4 packages | 深層架構審計 |
 
 ## working-papers
