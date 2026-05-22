@@ -1,19 +1,27 @@
-# my-notes
+# AI Engineering & Harness Engineering — 工作筆記與合成論文
 
-個人筆記與工作論文的公開倉庫。覆蓋 AI 工程架構、認知哲學、組織資本、學習方法論。
+來自個人 Obsidian archive 的精選公開版，覆蓋 AI 工程架構、認知哲學、組織資本、學習方法論。2026 年 4–5 月持續更新，commit history 可追溯時間戳。
 
-## 結構
+### Working Papers（合成論文）
 
-```
-my-notes/
-├── archive/              ← 原子筆記（按分類歸檔）
-├── reading-notes/        ← arxiv 論文與 repo 的閱讀筆記（67 篇）
-├── source-audit/         ← CLI 執行路徑追蹤審計（4 篇）
-└── working-papers/
-    ├── composed/          ← 合成論文（論證鏈完整，4 篇）
-    ├── deliverables/      ← 交付物（源碼審計、事實報告，8 篇）
-    └── usage-index.md     ← 消費追蹤
-```
+各篇論證一個獨立命題：
+
+- [compile-economy](working-papers/composed/compile-economy-2026-05-20.md) — 編譯經濟學：智能進步的分層治理框架
+- [discard-capability](working-papers/composed/discard-capability-2026-05-11.md) — 丟棄函數：信息篩選作為智能系統的統一上限
+- [externalization-ceiling](working-papers/composed/externalization-ceiling-2026-04-30.md) — Harness 層投資的結構性貶值
+- [cognitive-domain-boundary](working-papers/composed/cognitive-domain-boundary-2026-04-30.md) — 認知領域邊界
+
+### Source Audits（源碼審計）
+
+五份跨專案執行路徑追蹤與根因分析報告（DeepSeek-TUI / Reasonix / ds4 / Pi）。
+
+### Archive
+
+408 條原子筆記按技術與系統、認知與心智、組織與資本、方法論、生活決策五類歸檔。
+
+---
+
+以下為各分類的完整清單。
 
 ## archive
 
