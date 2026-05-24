@@ -1,27 +1,32 @@
-# AI Engineering & Harness Engineering — 工作筆記與合成論文
+# Harness Engineering · 源码审计 · 合成论文
 
-來自個人 Obsidian archive 的精選公開版，覆蓋 AI 工程架構、認知哲學、組織資本、學習方法論。2026 年 4–5 月持續更新，commit history 可追溯時間戳。
-
-### Working Papers（合成論文）
-
-各篇論證一個獨立命題：
-
-- [compile-economy](working-papers/composed/compile-economy-2026-05-20.md) — 編譯經濟學：智能進步的分層治理框架
-- [discard-capability](working-papers/composed/discard-capability-2026-05-11.md) — 丟棄函數：信息篩選作為智能系統的統一上限
-- [externalization-ceiling](working-papers/composed/externalization-ceiling-2026-04-30.md) — Harness 層投資的結構性貶值
-- [cognitive-domain-boundary](working-papers/composed/cognitive-domain-boundary-2026-04-30.md) — 認知領域邊界
-
-### Source Audits（源碼審計）
-
-九份跨專案源碼審計與執行路徑追蹤報告（DeepSeek-TUI / Reasonix / ds4 / Pi / Bub / Hermes / OpenClaw）。
-
-### Archive
-
-408 條原子筆記按技術與系統、認知與心智、組織與資本、方法論、生活決策五類歸檔。
+围绕 AI 工程架构、Harness Engineering、agent runtime 与分布式智能系统的长期判断与源码验证。
+材料来自个人 Obsidian 长期笔记 archive，论证置于 working papers，证据追溯至 source audits。
 
 ---
 
-以下為各分類的完整清單。
+## 先读这里
+
+首次进入，从这三篇判断 + 一份架构地图开始：
+
+- [**Harness 投资与上游优势**](working-papers/deliverables/03-Harness-investment-and-upstream-advantage.txt) — 外化天花板、harness 折旧、模型方做 harness 的结构性收益。理解 Harness Engineering 的核心不对称。
+- [**Claude Code Harness 源码复盘**](working-papers/deliverables/01-Claude-Code-Harness-Engineering-review.txt) — Query Loop 心跳、Context Governance 分层、工具权限与恢复机制的源码级追踪。
+- [**DeepSeek 开源 Harness 生态考察**](working-papers/deliverables/04-DeepSeek-open-source-harness-ecosystem-review.txt) — DeepSeek-TUI、Reasonix、ds4 三个项目的架构定位与工程取舍。
+- [**四项目横向架构比较**](source-audit/2026-05-21_cross-project-architecture-comparison.md) — TUI + Reasonix + Pi + ds4 在 Runtime Loop、Context 传递、工具编排上的系统对照。
+
+## 证据地图
+
+| 层 | 内容 | 目录 |
+|---|---|---|
+| **Working Papers** | 每篇论证一个独立命题的长期判断 | [`working-papers/`](working-papers/) |
+| **Source Audits** | 逐文件逐路径的源码审计与执行路径追踪 | [`source-audit/`](source-audit/) |
+| **Archive** | 按主题归并的原子笔记，commit 可追溯时间戳 | [`archive/`](archive/) |
+
+判断写在 working papers 里，判断的依据在 source audits 里，判断的原料在 archive 里。
+
+---
+
+以下为各分类的完整清单。
 
 ## archive
 
@@ -59,6 +64,7 @@
 - [cognitive-domain-boundary-2026-04-30](working-papers/composed/cognitive-domain-boundary-2026-04-30.md) — 認知領域邊界
 - [discard-capability-2026-05-11](working-papers/composed/discard-capability-2026-05-11.md) — 丟棄函數：信息篩選作為智能系統的統一上限
 - [externalization-ceiling-2026-04-30](working-papers/composed/externalization-ceiling-2026-04-30.md) — Harness 層投資的結構性貶值
+- [turn-level-context-compaction-2026-05-24](working-papers/composed/turn-level-context-compaction-2026-05-24.md) — Turn-Level Context Compaction：Coding Agent 的第三條路
 
 ### deliverables（交付物）
 
