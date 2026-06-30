@@ -1,0 +1,50 @@
+# 外化天花板与跨层 cache 契约
+
+## 一、Harness 折旧是真的，但承受方不对称
+
+每次模型升级，harness 中相当一部分外部补丁需要被重新标定。问题不是「技能会过时」——是它依存的对象本身每轮都在被替换。当前所有不修改模型权重的工程改进——prompt engineering、harness、managed agent——本质都是 externalization：在不改权重的前提下重组运行时环境。它的天花板由模型底层表征的几何结构决定，不为使用需求服务。
+
+但贬值的承受方不同。下游做 harness，贬值是净损失：模型一更新，过往的适配工作部分作废。上游做 harness，贬值是信号：哪些补偿被删了，标记了模型已经内化的能力；哪些还在，标记了仍需外部补偿的缺陷。同一笔工程投入，在两边的会计科目里记成完全不同的东西。
+
+一个公开可查的案例足以说明下游能逼近多远，也说明天花板停在哪。某 DeepSeek-native agent loop 在一位真实用户的 dashboard 上跑出 99.82% 的 input cache hit、约 435M tokens / 天、约 $12.34，对照 0% cache 反事实下约 $60.63。靠的是一整套针对当代 DeepSeek tool-calling 行为做的专门补偿：从 reasoning/content 扫遗漏 calls、修复截断 JSON、滑窗抑制重复——三层补偿堆出来的成果。这种工作可以做到很精，但它与某一代模型的具体失败分布绑定。分布一漂，整套需要重调。
+
+## 二、上游做 harness，折旧的同时拿三笔
+
+下游折旧是净损失。模型方做 harness，折旧的同时拿到三笔下游拿不到的收益。
+
+**训练信号。** harness 失败模式——tool call 后被用户回滚、agent 决策触发显式干预、某条补偿规则被拆——对下游是运营成本，对上游是 RL 反馈源。
+
+**能力等高线。** 持续删减、重写、回归 system prompt 与 harness 规则的过程，本质是绘制模型能力的负空间地图。下游不拥有权重和训练环境，看不到「这个补丁究竟在补什么」。
+
+**跨层 cache 契约。** 见下一节。
+
+## 三、跨层 cache 契约
+
+不是所有 harness 都同等贬值。一类锚定在物理约束（memory bandwidth）而非模型行为的设计，能跨多代模型存活。
+
+从 over-training 把高频 pattern 烧进权重、MoE 稀疏激活、KV cache 命中避免重复 prefill、prompt caching 最大化前缀复用——四个抽象层做同一件事：把重复计算前置，运行时只处理增量。这种对齐不是巧合，是 memory bandwidth 在所有层强制对齐。
+
+当模型 API、推理引擎、agent loop 都由同一阵营定义时，cache 契约可以跨层；当它们由不同方各自实现时，每层只能在自己那层尽力——再聪明的客户端 prefix engineering 也救不了 server 端不可见的 cache 不友好行为。第三方做 cache 优化，本质是用补丁补另一层补丁。
+
+一个本地 DeepSeek V4 Flash 推理引擎里有这样三行 C：
+
+```c
+if (calls->raw_dsml && calls->raw_dsml[0]) {
+    buf_puts(b, calls->raw_dsml);
+    return;
+}
+```
+
+含义是：模型当时采样出的 tool-call DSML 文本被原样存下，下次重放时直接 byte-level 复用，不走 JSON-to-DSML 的语义再渲染。为什么？因为语义等价的两段 JSON 在 tokenizer 下可能产生不同 token 序列，而 KV cache 命中按 token 对齐、不按 JSON 语义对齐。语义等价不等于 token 等价——这是 agent 场景里最隐蔽的 cache killer。同一引擎把 KV state 写到磁盘当一等公民、用手写 SHA1 取 rendered text bytes 做文件名、跑七层 cache hierarchy lookup——这些都是同一原则在物理层的展开。
+
+到了 agent loop 层，表现形式变了，原则没变。Context 被切成三区：不可变的 system + tool specs、单调追加的对话与 tool 结果、每 turn 清空的 reasoning scratchpad。切分依据不是「内容类型」而是「会不会破前缀」。发送前还跑一遍 healing：主动修复未配对 tool call、裁切超长 tool result——一旦 broken pair 进 prompt，前缀连续性立刻被打破。再到应用层，关心的不再是 token cache，是 application state continuity：session 持久化、durable task queue（crash 后 running task 重新入队）、用 side-git 存 workspace 快照而不碰用户自己的 `.git`。跨层契约不要求每层都做 cache，而是每层在自己的不变量上不断流。
+
+反例同样清晰。一些 agent 框架走 multi-provider（20+ known providers）+ session-tree branching 路线，换来的是接入广度与工作流灵活度，但每个 backend 的 cache 行为只能各自处理；另一些走 personal-assistant 多频道路线（WhatsApp / Telegram / Slack / iMessage / Matrix...），把 cache 这件事推到模型 API 之外更远的地方。这是设计前提的差异，不是优劣判断——一旦不绑定单一 backend，cache 契约就必然降级为客户端 best-effort。
+
+## 结
+
+外化天花板对下游是天花板，对上游是可调节的遮阳板。同样写 harness，下游折旧是净损失，上游折旧的同时拿到训练信号、能力等高线、跨层 cache 契约。后者最稳——memory bandwidth 不会因模型版本而变。
+
+逐项源码审计、line-level 引用与跨项目对比在 repo。可继续展开方向：模型升级后 system prompt 与 harness 规则如何被删减、重标定；LSP diagnostics 如何在 edit 后被注入到下一次 API 请求；三协议兼容的本地 server 如何让多家 client 无缝接入；以及 cost control 如何被做成 agent loop 内的 runtime policy。
+
+Repo: github.com/lesPrivilege/My-notes（source-audit 与 deliverables 目录）
