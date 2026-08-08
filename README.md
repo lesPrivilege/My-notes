@@ -3,6 +3,8 @@
 围绕 AI 工程架构、Harness Engineering、agent runtime 与分布式智能系统的长期判断与源码验证。
 材料来自个人 Obsidian 长期笔记 archive，论证置于 working papers，证据追溯至 source audits。
 
+本仓库同时承载当前本地使用的 skills：`skills/` 以本机 `~/.pi/agent/skills` 的实际工作树为准。笔记仍保留在仓库根目录，避免在本地建立第二个 project；`sync-my-notes.sh` 只同步笔记目录，不会自动暂存或覆盖 skills。
+
 ---
 
 ## 先读这里
